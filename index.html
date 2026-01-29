@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Calibraciones</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .top-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary {
+            background: #1e3799;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0c2461;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #219653;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #2980b9;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #dfe6e9;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #1e3799;
+        }
+        
+        .filters-container {
+            background: #f1f2f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .filter-item label {
+            display: block;
+            font-size: 0.9em;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .filter-item select,
+        .filter-item input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+        
+        .stats-bar {
+            background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-item .label {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+        
+        .stat-item .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #dfe6e9;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        
+        thead {
+            background: #2c3e50;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #1e3799;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #dfe6e9;
+        }
+        
+        tbody tr {
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        tbody tr.selected {
+            background-color: #e3f2fd;
+            border-left: 4px solid #1e3799;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .status-vigente {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status-vencido {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .status-proximo {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .status-sin-fecha {
+            background: #7f8c8d;
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 50px auto;
+            padding: 0;
+            border-radius: 12px;
+            max-width: 800px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        
+        .close:hover {
+            opacity: 0.8;
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px 14px;
+            border: 2px solid #dfe6e9;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1e3799;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #dfe6e9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .modal-footer .btn {
+            min-width: 100px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+        
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+            stroke: #3498db;
+        }
+        
+        .empty-state h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .top-bar {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .stats-bar {
+                justify-content: center;
+            }
+            
+            .stat-item {
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Sistema de Calibraciones</h1>
+            <p>Gestión Maestra de Equipos de Calibración</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- Barra superior con botones y búsqueda -->
+            <div class="top-bar">
+                <button class="btn btn-success" onclick="openNewModal()">
+                    ➕ Nuevo
+                </button>
+                <button class="btn btn-warning" onclick="openUpdateModal()">
+                    ✏️ Actualizar
+                </button>
+                <button class="btn btn-danger" onclick="openDeleteModal()">
+                    🗑️ Eliminar
+                </button>
+                <button class="btn btn-info" onclick="toggleFilters()">
+                    🔍 Filtros
+                </button>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar por ID, Nombre del Equipo, No. Serie...">
+                </div>
+                <button class="btn btn-primary" onclick="downloadExcel()">
+                    📥 Descargar Excel
+                </button>
+            </div>
+            
+            <!-- Contenedor de filtros -->
+            <div class="filters-container" id="filtersContainer">
+                <div class="filters-grid">
+                    <div class="filter-item">
+                        <label>Ubicación</label>
+                        <select id="filterUbicacion">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label>PRP5</label>
+                        <select id="filterPRP5">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label>Tipo</label>
+                        <select id="filterTipo">
+                            <option value="">Todos</option>
+                            <option value="Interno">Interno</option>
+                            <option value="Externo">Externo</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label>Estado Calibración</label>
+                        <select id="filterEstado">
+                            <option value="">Todos</option>
+                            <option value="vigente">Vigente</option>
+                            <option value="proximo">Próximo a Vencer (30 días)</option>
+                            <option value="vencido">Vencido</option>
+                            <option value="sin-fecha">Sin Fecha</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="applyFilters()" style="margin-top: 15px;">
+                    Aplicar Filtros
+                </button>
+            </div>
+            
+            <!-- Barra de estadísticas -->
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="label">Total Equipos</div>
+                    <div class="value" id="statTotal">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">Vigentes</div>
+                    <div class="value" id="statVigente">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">Por Vencer</div>
+                    <div class="value" id="statProximo">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">Vencidos</div>
+                    <div class="value" id="statVencido">0</div>
+                </div>
+            </div>
+            
+            <!-- Tabla de datos -->
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>ID</th>
+                            <th>Nombre del Equipo</th>
+                            <th>Modelo</th>
+                            <th>No. Serie</th>
+                            <th>Fabricante</th>
+                            <th>Rango</th>
+                            <th>Ubicación</th>
+                            <th>Responsable</th>
+                            <th>Fecha Calibración</th>
+                            <th>Vencimiento</th>
+                            <th>Precio $</th>
+                            <th>Vencimiento 2 Años</th>
+                            <th>Etiqueta</th>
+                            <th>Certificado</th>
+                            <th>PRP5</th>
+                            <th>Tipo</th>
+                            <th>Notas</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="19" class="empty-state">
+                                <div>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <h3>No hay datos cargados</h3>
+                                    <p>Los datos se cargarán automáticamente desde el Excel del repositorio</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para Nuevo Registro -->
+    <div id="modalNew" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Nuevo Equipo</h2>
+                <button class="close" onclick="closeModal('modalNew')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid" id="formNew"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="saveNew()">Guardar</button>
+                <button class="btn btn-primary" onclick="closeModal('modalNew')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para Actualizar -->
+    <div id="modalUpdate" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Actualizar Equipo</h2>
+                <button class="close" onclick="closeModal('modalUpdate')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Buscar por ID o Nombre</label>
+                    <input type="text" id="updateSearch" placeholder="Ingresa ID o Nombre del Equipo">
+                    <button class="btn btn-primary" onclick="searchForUpdate()" style="margin-top: 10px;">Buscar</button>
+                </div>
+                <div id="updateFormContainer" style="display: none; margin-top: 20px;">
+                    <div class="form-grid" id="formUpdate"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-warning" id="btnUpdate" onclick="saveUpdate()" style="display: none;">Actualizar</button>
+                <button class="btn btn-primary" onclick="closeModal('modalUpdate')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para Eliminar -->
+    <div id="modalDelete" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🗑️ Eliminar Equipo</h2>
+                <button class="close" onclick="closeModal('modalDelete')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Buscar por ID o Nombre</label>
+                    <input type="text" id="deleteSearch" placeholder="Ingresa ID o Nombre del Equipo">
+                    <button class="btn btn-primary" onclick="searchForDelete()" style="margin-top: 10px;">Buscar</button>
+                </div>
+                <div id="deleteInfo" style="display: none; margin-top: 20px; padding: 20px; background: #ffeaea; border-radius: 8px; border: 2px solid #e74c3c;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnDelete" onclick="confirmDelete()" style="display: none;">Confirmar Eliminación</button>
+                <button class="btn btn-primary" onclick="closeModal('modalDelete')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
